@@ -1,6 +1,6 @@
+import os
 import streamlit as st
 from google import genai
-from google.genai import types  # Imported for strict configuration if needed
 
 # Page settings
 st.set_page_config(
@@ -14,9 +14,12 @@ st.write("Learn any topic with simple explanations, examples and quizzes.")
 # Get API Key from Streamlit Secrets
 api_key = st.secrets["GEMINI_API_KEY"]
 
-# FIXED: Best practice for the new google-genai SDK is to pass it via Client(api_key=...)
-# Alternatively, ensure your streamlit secrets file uses the key name: GEMINI_API_KEY
-client = genai.Client(api_key=api_key)
+# FIX FOR AQ. KEYS: Set it directly into the OS environment variables 
+# before initializing the Client. The SDK recognizes this natively.
+os.environ["GEMINI_API_KEY"] = api_key
+
+# Initialize without explicitly passing the parameter to bypass the routing bug
+client = genai.Client()
 
 # User Input
 topic = st.text_input("Enter a Topic")
@@ -68,7 +71,7 @@ Give the correct answer and explanation.
             prompt = topic
 
         try:
-            # FIXED: Using a standard, stable model identifier for the API Key tier
+            # Using the fast, stable model variant 
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt
