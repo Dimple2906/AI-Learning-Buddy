@@ -1,10 +1,10 @@
 import os
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
-# ---------------------------
-# Streamlit Page Configuration
-# ---------------------------
+# -----------------------------
+# Page Configuration
+# -----------------------------
 st.set_page_config(
     page_title="AI Learning Buddy - Dimple",
     page_icon="🎓",
@@ -12,79 +12,145 @@ st.set_page_config(
 )
 
 st.title("🎓 AI Learning Buddy - Dimple")
-st.write("Learn any topic with simple explanations, examples, quizzes, and AI guidance.")
+st.write("Learn any topic with simple explanations, real-life examples, quizzes, and feedback.")
 
-# ---------------------------
-# Get Gemini API Key
-# ---------------------------
+# -----------------------------
+# Gemini API Key
+# -----------------------------
 api_key = None
 
-# First try Streamlit Secrets
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
     api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("Gemini API Key not found. Please add it in Streamlit Secrets.")
+    st.error("❌ Gemini API Key not found.")
+    st.info("Add GEMINI_API_KEY in Streamlit Secrets.")
     st.stop()
 
-client = genai.Client(api_key=api_key)
+genai.configure(api_key=api_key)
 
-# ---------------------------
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+# -----------------------------
 # User Input
-# ---------------------------
+# -----------------------------
 topic = st.text_input("📚 Enter a Topic")
 
-option = st.selectbox(
+activity = st.selectbox(
     "Choose an Activity",
     [
         "Explain Concept",
         "Real-Life Example",
         "Generate Quiz",
+        "Evaluate Answer",
         "Ask Anything"
     ]
 )
 
-# ---------------------------
+student_answer = ""
+question = ""
+
+if activity == "Evaluate Answer":
+    question = st.text_area("Enter the Question")
+    student_answer = st.text_area("Enter Student's Answer")
+
+# -----------------------------
 # Generate Button
-# ---------------------------
+# -----------------------------
 if st.button("Generate"):
 
     if topic.strip() == "":
         st.warning("Please enter a topic.")
+        st.stop()
+
+    if activity == "Explain Concept":
+
+        prompt = f"""
+You are Dimple, a friendly AI tutor.
+
+Explain {topic} in simple language for a beginner.
+
+Use:
+- Easy words
+- One real-life analogy
+- Short explanation
+"""
+
+    elif activity == "Real-Life Example":
+
+        prompt = f"""
+You are Dimple.
+
+Give one real-life example of {topic}.
+
+Explain it in beginner-friendly language.
+"""
+
+    elif activity == "Generate Quiz":
+
+        prompt = f"""
+You are Dimple.
+
+Create 5 multiple-choice questions on {topic}.
+
+Each question must contain:
+
+A)
+
+B)
+
+C)
+
+D)
+
+After each question provide:
+
+Correct Answer
+
+Short Explanation
+"""
+
+    elif activity == "Evaluate Answer":
+
+        prompt = f"""
+You are Dimple.
+
+Topic:
+{topic}
+
+Question:
+{question}
+
+Student Answer:
+{student_answer}
+
+Give encouraging feedback.
+
+If the answer is wrong:
+
+• Explain why.
+
+• Give the correct answer.
+
+• Explain in simple language.
+"""
+
     else:
 
-        if option == "Explain Concept":
-            prompt = f"""
-            Explain {topic} in simple language for a beginner.
-            Use easy words and one real-life analogy.
-            """
+        prompt = topic
 
-        elif option == "Real-Life Example":
-            prompt = f"""
-            Give one clear real-life example of {topic}.
-            Explain it in simple language.
-            """
+    try:
 
-        elif option == "Generate Quiz":
-            prompt = f"""
-            Create 5 multiple-choice questions on {topic}.
-            Each question should have 4 options (A, B, C, D).
-            After each question, provide the correct answer and a short explanation.
-            """
+        with st.spinner("Generating..."):
 
-        else:
-            prompt = topic
+            response = model.generate_content(prompt)
 
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
+        st.success("Done!")
 
-            st.success("Response Generated Successfully!")
-            st.write(response.text)
+        st.write(response.text)
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+    except Exception as e:
+
+        st.error(f"Error: {e}")
