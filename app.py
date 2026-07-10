@@ -1,6 +1,5 @@
-import os
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # Page settings
 st.set_page_config(
@@ -14,12 +13,8 @@ st.write("Learn any topic with simple explanations, examples and quizzes.")
 # Get API Key from Streamlit Secrets
 api_key = st.secrets["GEMINI_API_KEY"]
 
-# FIX FOR AQ. KEYS: Set it directly into the OS environment variables 
-# before initializing the Client. The SDK recognizes this natively.
-os.environ["GEMINI_API_KEY"] = api_key
-
-# Initialize without explicitly passing the parameter to bypass the routing bug
-client = genai.Client()
+# Configure the legacy client—skips the broken SDK auth logic entirely
+genai.configure(api_key=api_key)
 
 # User Input
 topic = st.text_input("Enter a Topic")
@@ -71,11 +66,9 @@ Give the correct answer and explanation.
             prompt = topic
 
         try:
-            # Using the fast, stable model variant 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
+            # Use the ultra-fast stable model variant
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(prompt)
 
             st.success("Generated Successfully!")
             st.write(response.text)
