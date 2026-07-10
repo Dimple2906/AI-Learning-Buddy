@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # -----------------------------
 # Page Configuration
@@ -11,8 +11,11 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("🎓 AI Learning Buddy - Dimple")
-st.write("Learn any topic with simple explanations, real-life examples, quizzes, and feedback.")
+st.title("🎓 Learn with Dimple - AI Learning Buddy")
+st.write(
+    "Your friendly AI tutor that explains concepts, gives examples, "
+    "creates quizzes, and provides feedback."
+)
 
 # -----------------------------
 # Gemini API Key
@@ -29,9 +32,8 @@ if not api_key:
     st.info("Add GEMINI_API_KEY in Streamlit Secrets.")
     st.stop()
 
-genai.configure(api_key=api_key)
-
-model = genai.GenerativeModel("gemini-2.0-flash")
+# New Gemini Client
+client = genai.Client(api_key=api_key)
 
 # -----------------------------
 # User Input
@@ -49,15 +51,16 @@ activity = st.selectbox(
     ]
 )
 
-student_answer = ""
 question = ""
+student_answer = ""
 
 if activity == "Evaluate Answer":
     question = st.text_area("Enter the Question")
-    student_answer = st.text_area("Enter Student's Answer")
+    student_answer = st.text_area("Enter Student Answer")
+
 
 # -----------------------------
-# Generate Button
+# Generate Response
 # -----------------------------
 if st.button("Generate"):
 
@@ -65,17 +68,18 @@ if st.button("Generate"):
         st.warning("Please enter a topic.")
         st.stop()
 
+    # Create Prompt
     if activity == "Explain Concept":
 
         prompt = f"""
 You are Dimple, a friendly AI tutor.
 
-Explain {topic} in simple language for a beginner.
+Explain {topic} in simple language for beginners.
 
 Use:
 - Easy words
 - One real-life analogy
-- Short explanation
+- Short and clear explanation
 """
 
     elif activity == "Real-Life Example":
@@ -83,39 +87,32 @@ Use:
         prompt = f"""
 You are Dimple.
 
-Give one real-life example of {topic}.
-
-Explain it in beginner-friendly language.
+Give one clear real-life example of {topic}.
+Explain it in simple beginner-friendly language.
 """
 
     elif activity == "Generate Quiz":
 
         prompt = f"""
-You are Dimple.
+You are Dimple, an encouraging tutor.
 
-Create 5 multiple-choice questions on {topic}.
+Create 5 multiple-choice questions about {topic}.
 
-Each question must contain:
-
+Each question must have:
 A)
-
 B)
-
 C)
-
 D)
 
 After each question provide:
-
-Correct Answer
-
-Short Explanation
+- Correct Answer
+- Short Explanation
 """
 
     elif activity == "Evaluate Answer":
 
         prompt = f"""
-You are Dimple.
+You are Dimple, a supportive tutor.
 
 Topic:
 {topic}
@@ -129,27 +126,31 @@ Student Answer:
 Give encouraging feedback.
 
 If the answer is wrong:
-
-• Explain why.
-
-• Give the correct answer.
-
-• Explain in simple language.
+- Explain the mistake
+- Provide the correct answer
+- Explain simply
 """
 
     else:
 
-        prompt = topic
+        prompt = f"""
+Answer this question about {topic}
+in a simple beginner-friendly way.
+"""
+
 
     try:
 
-        with st.spinner("Generating..."):
+        with st.spinner("Dimple is thinking..."):
 
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
 
-        st.success("Done!")
+        st.success("Response Generated Successfully!")
 
-        st.write(response.text)
+        st.markdown(response.text)
 
     except Exception as e:
 
