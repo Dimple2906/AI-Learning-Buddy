@@ -1,5 +1,6 @@
 import streamlit as st
 from google import genai
+from google.genai import types  # Imported for strict configuration if needed
 
 # Page settings
 st.set_page_config(
@@ -13,9 +14,9 @@ st.write("Learn any topic with simple explanations, examples and quizzes.")
 # Get API Key from Streamlit Secrets
 api_key = st.secrets["GEMINI_API_KEY"]
 
-client = genai.Client(
-    api_key=api_key
-)
+# FIXED: Best practice for the new google-genai SDK is to pass it via Client(api_key=...)
+# Alternatively, ensure your streamlit secrets file uses the key name: GEMINI_API_KEY
+client = genai.Client(api_key=api_key)
 
 # User Input
 topic = st.text_input("Enter a Topic")
@@ -30,16 +31,13 @@ option = st.selectbox(
     ]
 )
 
-
 if st.button("Generate"):
 
     if topic.strip() == "":
         st.warning("Please enter a topic.")
 
     else:
-
         if option == "Explain Concept":
-
             prompt = f"""
 You are Dimple, a friendly AI tutor.
 
@@ -48,14 +46,12 @@ Use easy words and one real-life analogy.
 """
 
         elif option == "Real-Life Example":
-
             prompt = f"""
 Give one clear real-life example of {topic}.
 Explain it in simple beginner-friendly language.
 """
 
         elif option == "Generate Quiz":
-
             prompt = f"""
 Create 5 MCQ questions about {topic}.
 
@@ -69,14 +65,12 @@ Give the correct answer and explanation.
 """
 
         else:
-
             prompt = topic
 
-
         try:
-
+            # FIXED: Using a standard, stable model identifier for the API Key tier
             response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
 
@@ -84,5 +78,4 @@ Give the correct answer and explanation.
             st.write(response.text)
 
         except Exception as e:
-
-            st.error(e)
+            st.error(f"An error occurred: {e}")
