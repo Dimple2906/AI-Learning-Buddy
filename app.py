@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # Page settings
 st.set_page_config(
@@ -13,8 +13,8 @@ st.write("Learn any topic with simple explanations, examples and quizzes.")
 # Get API Key from Streamlit Secrets
 api_key = st.secrets["GEMINI_API_KEY"]
 
-# Configure the legacy client—skips the broken SDK auth logic entirely
-genai.configure(api_key=api_key)
+# Properly initialize the current client
+client = genai.Client(api_key=api_key)
 
 # User Input
 topic = st.text_input("Enter a Topic")
@@ -66,9 +66,11 @@ Give the correct answer and explanation.
             prompt = topic
 
         try:
-            # Use the ultra-fast stable model variant
-            model = genai.GenerativeModel("gemini-1.5-flash-latest")
-            response = model.generate_content(prompt)
+            # Using the active, supported standard model
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
 
             st.success("Generated Successfully!")
             st.write(response.text)
