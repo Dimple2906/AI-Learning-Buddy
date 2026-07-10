@@ -1,157 +1,88 @@
-import os
 import streamlit as st
 from google import genai
 
-# -----------------------------
-# Page Configuration
-# -----------------------------
+# Page settings
 st.set_page_config(
-    page_title="AI Learning Buddy - Dimple",
-    page_icon="🎓",
-    layout="centered"
+    page_title="AI Learning Buddy Dimple",
+    page_icon="🎓"
 )
 
-st.title("🎓 Learn with Dimple - AI Learning Buddy")
-st.write(
-    "Your friendly AI tutor that explains concepts, gives examples, "
-    "creates quizzes, and provides feedback."
+st.title("🎓 AI Learning Buddy Dimple")
+st.write("Learn any topic with simple explanations, examples and quizzes.")
+
+# Get API Key from Streamlit Secrets
+api_key = st.secrets["GEMINI_API_KEY"]
+
+client = genai.Client(
+    api_key=api_key
 )
 
-# -----------------------------
-# Gemini API Key
-# -----------------------------
-api_key = None
-
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    st.error("❌ Gemini API Key not found.")
-    st.info("Add GEMINI_API_KEY in Streamlit Secrets.")
-    st.stop()
-
-# New Gemini Client
-client = genai.Client(api_key=api_key)
-
-# -----------------------------
 # User Input
-# -----------------------------
-topic = st.text_input("📚 Enter a Topic")
+topic = st.text_input("Enter a Topic")
 
-activity = st.selectbox(
-    "Choose an Activity",
+option = st.selectbox(
+    "Choose Activity",
     [
         "Explain Concept",
         "Real-Life Example",
         "Generate Quiz",
-        "Evaluate Answer",
         "Ask Anything"
     ]
 )
 
-question = ""
-student_answer = ""
 
-if activity == "Evaluate Answer":
-    question = st.text_area("Enter the Question")
-    student_answer = st.text_area("Enter Student Answer")
-
-
-# -----------------------------
-# Generate Response
-# -----------------------------
 if st.button("Generate"):
 
     if topic.strip() == "":
         st.warning("Please enter a topic.")
-        st.stop()
 
-    # Create Prompt
-    if activity == "Explain Concept":
+    else:
 
-        prompt = f"""
+        if option == "Explain Concept":
+
+            prompt = f"""
 You are Dimple, a friendly AI tutor.
 
 Explain {topic} in simple language for beginners.
-
-Use:
-- Easy words
-- One real-life analogy
-- Short and clear explanation
+Use easy words and one real-life analogy.
 """
 
-    elif activity == "Real-Life Example":
+        elif option == "Real-Life Example":
 
-        prompt = f"""
-You are Dimple.
-
+            prompt = f"""
 Give one clear real-life example of {topic}.
 Explain it in simple beginner-friendly language.
 """
 
-    elif activity == "Generate Quiz":
+        elif option == "Generate Quiz":
 
-        prompt = f"""
-You are Dimple, an encouraging tutor.
+            prompt = f"""
+Create 5 MCQ questions about {topic}.
 
-Create 5 multiple-choice questions about {topic}.
-
-Each question must have:
+Each question should have:
 A)
 B)
 C)
 D)
 
-After each question provide:
-- Correct Answer
-- Short Explanation
+Give the correct answer and explanation.
 """
 
-    elif activity == "Evaluate Answer":
+        else:
 
-        prompt = f"""
-You are Dimple, a supportive tutor.
-
-Topic:
-{topic}
-
-Question:
-{question}
-
-Student Answer:
-{student_answer}
-
-Give encouraging feedback.
-
-If the answer is wrong:
-- Explain the mistake
-- Provide the correct answer
-- Explain simply
-"""
-
-    else:
-
-        prompt = f"""
-Answer this question about {topic}
-in a simple beginner-friendly way.
-"""
+            prompt = topic
 
 
-    try:
-
-        with st.spinner("Dimple is thinking..."):
+        try:
 
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-3.1-flash-lite",
                 contents=prompt
             )
 
-        st.success("Response Generated Successfully!")
+            st.success("Generated Successfully!")
+            st.write(response.text)
 
-        st.markdown(response.text)
+        except Exception as e:
 
-    except Exception as e:
-
-        st.error(f"Error: {e}")
+            st.error(e)
