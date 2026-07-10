@@ -3,11 +3,11 @@ from google import genai
 
 # Page settings
 st.set_page_config(
-    page_title="AI Learning Buddy Dimple",
+    page_title="Learn with Dimple: AI Learning Buddy",
     page_icon="🎓"
 )
 
-st.title("🎓 AI Learning Buddy Dimple")
+st.title("🎓Learn with Dimple: AI Learning Buddy")
 st.write("Learn any topic with simple explanations, examples and quizzes.")
 
 # Get API Key from Streamlit Secrets
